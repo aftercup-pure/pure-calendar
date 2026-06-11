@@ -1,4 +1,6 @@
 [
+   { "id": 83, "type": "event", "date": "2026-06-11", "time": "14:00", "text": "📰 Tchibo Exclusive őrölt, védőgázas kávé teszt", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/334", "importance": "average" },  
+   { "id": 82, "type": "event", "date": "2026-05-22", "time": "20:00", "text": "📰 Rozsda-vörös Corgi Caffé", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/333", "importance": "average" },  
    { "id": 81, "type": "event", "date": "2026-05-19", "time": "20:00", "text": "📰 Reed Cafe", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/332", "importance": "average" },  
    { "id": 80, "type": "event", "date": "2026-05-17", "time": "17:00", "text": "📰 Jaguár Álma specialty kávé a Vivi Édesszalonban", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/331", "importance": "average" },  
    { "id": 79, "type": "event", "date": "2026-05-11", "time": "10:00", "text": "📰 Színek és formák univerzuma kiállításmegnyitó", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/330", "importance": "average" },  
