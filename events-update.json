@@ -1,4 +1,6 @@
 [
+   { "id": 85, "type": "event", "date": "2026-06-28", "time": "14:00", "text": "📰 Vajon elég lesz a cold brew?", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/342", "importance": "average" },
+   { "id": 84, "type": "event", "date": "2026-06-20", "time": "14:00", "text": "📰 Cherry Coconut Ice Latte", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/335", "importance": "average" },  
    { "id": 83, "type": "event", "date": "2026-06-11", "time": "14:00", "text": "📰 Tchibo Exclusive őrölt, védőgázas kávé teszt", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/334", "importance": "average" },  
    { "id": 82, "type": "event", "date": "2026-05-22", "time": "20:00", "text": "📰 Rozsda-vörös Corgi Caffé", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/333", "importance": "average" },  
    { "id": 81, "type": "event", "date": "2026-05-19", "time": "20:00", "text": "📰 Reed Cafe", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/332", "importance": "average" },  
