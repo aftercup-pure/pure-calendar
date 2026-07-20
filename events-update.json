@@ -1,4 +1,7 @@
 [
+   { "id": 88, "type": "event", "date": "2026-07-20", "time": "11:00", "text": "📰 Lipóti Pékség és Kávézó", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/345", "importance": "average" },
+   { "id": 87, "type": "event", "date": "2026-07-12", "time": "14:00", "text": "📰 Igen, az ott egy kávé 😱", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/344", "importance": "average" },
+   { "id": 86, "type": "event", "date": "2026-07-10", "time": "14:00", "text": "📰 A Starbucks-os cold brew", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/343", "importance": "average" },
    { "id": 85, "type": "event", "date": "2026-06-28", "time": "14:00", "text": "📰 Vajon elég lesz a cold brew?", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/342", "importance": "average" },
    { "id": 84, "type": "event", "date": "2026-06-20", "time": "14:00", "text": "📰 Cherry Coconut Ice Latte", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/335", "importance": "average" },  
    { "id": 83, "type": "event", "date": "2026-06-11", "time": "14:00", "text": "📰 Tchibo Exclusive őrölt, védőgázas kávé teszt", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/334", "importance": "average" },  
