@@ -1,4 +1,11 @@
 [
+   { "id": 106, "type": "event", "date": "2026-09-05", "time": "15:00", "text": "📰 Cafe Frei (Király utca)", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/363", "importance": "average" },
+   { "id": 105, "type": "event", "date": "2026-09-01", "time": "11:00", "text": "📰 Salted", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/362", "importance": "average" },
+   { "id": 104, "type": "event", "date": "2026-08-30", "time": "15:00", "text": "📰 French press a Villányi-hegységben", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/361", "importance": "average" },
+   { "id": 103, "type": "event", "date": "2026-08-27", "time": "18:00", "text": "📰 Bistrosa", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/360", "importance": "average" },
+   { "id": 102, "type": "event", "date": "2026-08-24", "time": "20:30", "text": "📰 Czukor Borsó", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/359", "importance": "average" },
+   { "id": 101, "type": "event", "date": "2026-08-22", "time": "18:00", "text": "📰 Mini's", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/358", "importance": "average" },
+   { "id": 100, "type": "event", "date": "2026-08-17", "time": "11:00", "text": "📰 Starbucks Etele Plaza", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/357", "importance": "average" },
    { "id": 99, "type": "event", "date": "2026-08-15", "time": "12:00", "text": "📰 Kávé a távolsági vonatokon", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/356", "importance": "average" },
    { "id": 98, "type": "event", "date": "2026-08-10", "time": "12:00", "text": "📰 Ez a cold brew bejárta a fél országot", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/355", "importance": "average" },
    { "id": 97, "type": "event", "date": "2026-08-09", "time": "12:00", "text": "📰 Pesti Forno", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/354", "importance": "average" },
