@@ -1,4 +1,5 @@
 [
+   { "id": 107, "type": "event", "date": "2026-09-07", "time": "11:00", "text": "📰 3in1 a bánya felett", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/364", "importance": "average" },
    { "id": 106, "type": "event", "date": "2026-09-05", "time": "15:00", "text": "📰 Cafe Frei (Király utca)", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/363", "importance": "average" },
    { "id": 105, "type": "event", "date": "2026-09-01", "time": "11:00", "text": "📰 Salted", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/362", "importance": "average" },
    { "id": 104, "type": "event", "date": "2026-08-30", "time": "15:00", "text": "📰 French press a Villányi-hegységben", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/361", "importance": "average" },
