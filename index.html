@@ -974,6 +974,14 @@
             }
         }
     </style>
+    <!-- Firebase Cloud Messaging — ugyanaz a projekt/backend, mint a fő
+         Aftercup Calendar appban, mert ez az e-paper verzió is ugyanazt az
+         Apps Script backendet használja (lásd API_URL). Csak akkor próbál
+         valódi push-ot beállítani, ha a böngésző ténylegesen támogatja
+         (Notification + Push API + Service Worker) — ha nem, csendben a
+         korábban beépített helyi (setTimeout-alapú) ütemezésre esik vissza. -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 </head>
 <body class="light-theme">
 
@@ -1110,6 +1118,12 @@
             <option value="high">High Priority</option>
         </select>
 
+        <div id="auto-defer-wrapper" style="display:none; margin-bottom: 15px;">
+            <label class="task-checkbox-label">
+                <input type="checkbox" id="event-auto-defer"> Auto-postpone to tomorrow if not done
+            </label>
+        </div>
+
         <select id="place-type" class="popup-input-style">
             <option value="none">No Location</option>
             <option value="virtual">Virtual (URL)</option>
@@ -1189,11 +1203,41 @@
             <h3>Aftercup Posts</h3>
             <div id="aftercup-posts-content"></div>
         </div>
-        
+
+        <h3 style="margin-top: 20px;">Do Not Disturb</h3>
+        <label class="task-checkbox-label" style="display:block; margin-bottom: 15px;">
+            <input type="checkbox" id="dnd-toggle" onchange="localStorage.setItem(DO_NOT_DISTURB_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications();"> Pause all reminders
+        </label>
+
         <h3 style="margin-top: 20px;">Notification Times</h3>
         <div id="summary-notification-times-container"></div>
         <button class="icon-btn" style="width:100%; border: 2px dashed var(--border-color); margin-bottom: 15px; font-weight:bold;" onclick="addSummaryNotificationTimeInput()">+ Add Time</button>
-        <button class="popup-btn" onclick="saveSummaryNotificationSettings()">Save Settings</button>
+
+        <label class="task-checkbox-label" style="display:block; margin-bottom: 15px;">
+            <input type="checkbox" id="smart-notifications-toggle" onchange="localStorage.setItem(SMART_NOTIFICATIONS_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications();"> Smart notifications (auto-timed to today's events)
+        </label>
+
+        <button class="popup-btn" onclick="saveSummaryNotificationSettings()">Save Notification Times</button>
+
+        <h3 style="margin-top: 20px;">Wake-up Strategy</h3>
+        <div style="font-size:0.85rem; margin-bottom:10px;">Smart notifications never fire before this time.</div>
+        <label style="display:block; font-weight:bold; margin-bottom:5px;">Weekday wake-up</label>
+        <input type="time" id="wakeup-weekday" class="popup-input-style" style="margin-bottom:10px;">
+        <label style="display:block; font-weight:bold; margin-bottom:5px;">Weekend wake-up</label>
+        <input type="time" id="wakeup-weekend" class="popup-input-style" style="margin-bottom:10px;">
+
+        <label class="task-checkbox-label" style="display:block; margin-bottom: 10px;">
+            <input type="checkbox" id="wakeup-use-shift-toggle" onchange="toggleWakeupShiftSection()"> Use Shift Planner instead
+        </label>
+        <div id="wakeup-shift-section" style="display:none; margin-bottom:10px; border: 2px dashed var(--border-color); padding: 10px;">
+            <label style="display:block; font-weight:bold; margin-bottom:5px;">Morning shift wake-up</label>
+            <input type="time" id="wakeup-shift-morning" class="popup-input-style" style="margin-bottom:10px;">
+            <label style="display:block; font-weight:bold; margin-bottom:5px;">Afternoon shift wake-up</label>
+            <input type="time" id="wakeup-shift-afternoon" class="popup-input-style" style="margin-bottom:10px;">
+            <label style="display:block; font-weight:bold; margin-bottom:5px;">Night shift wake-up</label>
+            <input type="time" id="wakeup-shift-night" class="popup-input-style" style="margin-bottom:0;">
+        </div>
+        <button class="popup-btn" onclick="saveWakeupStrategy()">Save Wake-up Strategy</button>
     </div>
 
     <div id="dreams-popup" class="popup">
@@ -1348,7 +1392,7 @@
 
         <h3 style="margin-top: 30px;">About</h3>
         <div style="text-align: center; margin-bottom: 15px;">
-            <div style="font-family: var(--font-mono); font-size: 0.9rem; font-weight: bold; margin-bottom: 15px;">Version 1.0 for MP01</div>
+            <div style="font-family: var(--font-mono); font-size: 0.9rem; font-weight: bold; margin-bottom: 15px;">Version 1.1 for MP01</div>
             <a href="https://github.com/aftercupapp/aftercup-calendar-mp.git" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid var(--border-color); background: transparent; color: var(--text-color); padding: 12px 15px; font-weight: bold; text-transform: uppercase; text-decoration: none;">
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                 GitHub Source
@@ -1447,8 +1491,44 @@
       const DAILY_SUMMARY_TIMES_KEY = 'dailySummaryNotificationTimes';
       const LAST_NOTIFIED_TIMES_KEY = 'dailySummaryLastNotifiedTimes';
       const APP_LAST_RESET_DATE_KEY = 'appLastResetDate';
+      const SMART_NOTIFICATIONS_KEY = 'smartNotificationsEnabled';
+      const WAKEUP_STRATEGY_KEY = 'wakeupStrategy';
+      const DO_NOT_DISTURB_KEY = 'doNotDisturbEnabled';
+      const DEFAULT_WAKEUP_STRATEGY = {
+          useShiftPlanner: false,
+          weekday: '07:00',
+          weekend: '09:00',
+          shiftTimes: { 'highlight-yellow': '05:00', 'highlight-orange': '10:00', 'highlight-blue': '18:00' }
+      };
 
-      const API_URL = 'https://script.google.com/macros/s/AKfycbxHrk5gnCYw6iIWQ_DR1wh53Hpgnxvj80A1N-DcqRgfvzn12Ubk_9sx7hrikr3cVoxaKw/exec';
+      const API_URL = 'https://script.google.com/macros/s/AKfycbzM42MVH03foaHHyytDDmurj6VF8K27CyOsdZgHR6FHziK3t3PpfjycNfssFwtuRmSx/exec';
+
+      // ÚJ: valódi háttér-push (FCM) — ugyanaz a Firebase projekt, amit a fő
+      // Aftercup Calendar app is használ, mert a backend (Apps Script,
+      // checkAndSendScheduledNotifications) ehhez a projekthez van kötve.
+      const FIREBASE_CONFIG = {
+          apiKey: "AIzaSyDmRsYi4PTrYtIUouGhj1GYgnSLoe-jAXY",
+          authDomain: "aftercup-calendar-96918.firebaseapp.com",
+          projectId: "aftercup-calendar-96918",
+          storageBucket: "aftercup-calendar-96918.firebasestorage.app",
+          messagingSenderId: "778245795119",
+          appId: "1:778245795119:web:522e1fe3e7a45cc37c85da"
+      };
+      const FCM_VAPID_KEY = "BLCxTWlv8F5S2I1BXZPh2J5LmBtdIBfnwMwSQGOahap7FWg-HEsm5evywiTlexiI0HSfKKfBWGCSA3ACYguaNGc";
+      const FCM_TOKEN_KEY = 'fcmToken';
+
+      let isFirebaseConfigured = false;
+      let firebaseMessaging = null;
+      try {
+          if (typeof firebase !== 'undefined') {
+              firebase.initializeApp(FIREBASE_CONFIG);
+              firebaseMessaging = firebase.messaging();
+              isFirebaseConfigured = true;
+          }
+      } catch (e) {
+          console.warn('Firebase init failed — falling back to local scheduling only.', e);
+          isFirebaseConfigured = false;
+      }
 
       const syncInput = document.getElementById('sync-file-input');
       if (syncInput) {
@@ -1624,7 +1704,14 @@
           events = mergeEvents(fetchedEvents, userEvents);
           dreams = safeParseJSON('dreams', []);
 
+          // Automatikus elhalasztás: a be nem fejezett, "auto defer" jelölésű
+          // task-ok, amik korábbi napról maradtak, mostantól automatikusan mára
+          // tolódnak — jelölve, hogy "áthozott" tétel.
+          const wasAnythingDeferred = runAutomaticTaskDeferral();
+
           saveEvents(true);
+
+          if (wasAnythingDeferred && currentUser) triggerAutoSync();
 
           dailyNotificationTimes = safeParseJSON(DAILY_SUMMARY_TIMES_KEY, []);
           await scheduleAutomaticNotifications();
@@ -1821,6 +1908,9 @@
           const titleInput = document.getElementById('new-event-input');
           const placeType = document.getElementById('place-type');
           const timeInput = document.getElementById('event-time');
+          const autoDeferWrapper = document.getElementById('auto-defer-wrapper');
+
+          if (autoDeferWrapper) autoDeferWrapper.style.display = (eventType === 'task') ? 'block' : 'none';
 
           if (currentEditId !== null && !currentBulkEditInfo && eventType !== 'note') {
               if (routineOptions) routineOptions.style.display = 'none';
@@ -2028,6 +2118,8 @@
               if (noteContent) noteContent.innerHTML = '';
               document.getElementById('event-type').value = 'event';
               document.getElementById('event-importance').value = 'average';
+              const autoDeferEl = document.getElementById('event-auto-defer');
+              if (autoDeferEl) autoDeferEl.checked = false;
               document.getElementById('place-type').value = 'none';
               document.getElementById('place-url').style.display = 'none';
               document.getElementById('place-physical').style.display = 'none';
@@ -2133,6 +2225,61 @@
 
           populateSummaryNotificationTimeInputs();
           fetchWeather();
+
+          const dndToggle = document.getElementById('dnd-toggle');
+          if (dndToggle) dndToggle.checked = isDoNotDisturbEnabled();
+          const smartToggle = document.getElementById('smart-notifications-toggle');
+          if (smartToggle) smartToggle.checked = isSmartNotificationsEnabled();
+          populateWakeupStrategyFields();
+      }
+
+      function populateWakeupStrategyFields() {
+          const strategy = getWakeupStrategy();
+          const weekdayEl = document.getElementById('wakeup-weekday');
+          const weekendEl = document.getElementById('wakeup-weekend');
+          const useShiftToggle = document.getElementById('wakeup-use-shift-toggle');
+          const morningEl = document.getElementById('wakeup-shift-morning');
+          const afternoonEl = document.getElementById('wakeup-shift-afternoon');
+          const nightEl = document.getElementById('wakeup-shift-night');
+
+          if (weekdayEl) weekdayEl.value = strategy.weekday;
+          if (weekendEl) weekendEl.value = strategy.weekend;
+          if (useShiftToggle) useShiftToggle.checked = strategy.useShiftPlanner;
+          if (morningEl) morningEl.value = strategy.shiftTimes['highlight-yellow'];
+          if (afternoonEl) afternoonEl.value = strategy.shiftTimes['highlight-orange'];
+          if (nightEl) nightEl.value = strategy.shiftTimes['highlight-blue'];
+
+          const shiftSection = document.getElementById('wakeup-shift-section');
+          if (shiftSection) shiftSection.style.display = strategy.useShiftPlanner ? 'block' : 'none';
+      }
+
+      function toggleWakeupShiftSection() {
+          const useShiftToggle = document.getElementById('wakeup-use-shift-toggle');
+          const shiftSection = document.getElementById('wakeup-shift-section');
+          if (shiftSection) shiftSection.style.display = (useShiftToggle && useShiftToggle.checked) ? 'block' : 'none';
+      }
+
+      function saveWakeupStrategy() {
+          const weekdayEl = document.getElementById('wakeup-weekday');
+          const weekendEl = document.getElementById('wakeup-weekend');
+          const useShiftToggle = document.getElementById('wakeup-use-shift-toggle');
+          const morningEl = document.getElementById('wakeup-shift-morning');
+          const afternoonEl = document.getElementById('wakeup-shift-afternoon');
+          const nightEl = document.getElementById('wakeup-shift-night');
+
+          const strategy = {
+              useShiftPlanner: !!(useShiftToggle && useShiftToggle.checked),
+              weekday: (weekdayEl && weekdayEl.value) || DEFAULT_WAKEUP_STRATEGY.weekday,
+              weekend: (weekendEl && weekendEl.value) || DEFAULT_WAKEUP_STRATEGY.weekend,
+              shiftTimes: {
+                  'highlight-yellow': (morningEl && morningEl.value) || DEFAULT_WAKEUP_STRATEGY.shiftTimes['highlight-yellow'],
+                  'highlight-orange': (afternoonEl && afternoonEl.value) || DEFAULT_WAKEUP_STRATEGY.shiftTimes['highlight-orange'],
+                  'highlight-blue': (nightEl && nightEl.value) || DEFAULT_WAKEUP_STRATEGY.shiftTimes['highlight-blue']
+              }
+          };
+
+          localStorage.setItem(WAKEUP_STRATEGY_KEY, JSON.stringify(strategy));
+          scheduleAutomaticNotifications();
       }
 
       function showUpcomingPopup() {
@@ -2481,6 +2628,8 @@
           const eventTime = document.getElementById('event-time').value;
           const eventColor = selectedColor;
           const eventImportance = document.getElementById('event-importance').value;
+          const autoDeferEl = document.getElementById('event-auto-defer');
+          const eventAutoDefer = (eventType === 'task' && autoDeferEl) ? autoDeferEl.checked : false;
 
           let eventText = '';
           if (eventType === 'note') {
@@ -2518,6 +2667,7 @@
                       type: eventType, date: eventDateInput, time: eventTime, text: eventText,
                       color: eventColor, importance: eventImportance, place: placeData,
                       completed: eventType === 'task' ? (originalEvent.type === 'task' ? originalEvent.completed : false) : undefined,
+                      autoDefer: eventAutoDefer,
                       lastModified: Date.now()
                   };
               }
@@ -2525,7 +2675,7 @@
               const baseEvent = {
                   id: Date.now(), type: eventType, date: eventDateInput, time: eventTime,
                   text: eventText, color: eventColor, importance: eventImportance, place: placeData,
-                  completed: eventType === 'task' ? false : undefined, preAdded: false, lastModified: Date.now()
+                  completed: eventType === 'task' ? false : undefined, autoDefer: eventAutoDefer, preAdded: false, lastModified: Date.now()
               };
 
               if (eventType === 'routine') {
@@ -2616,6 +2766,9 @@
           }
 
           document.getElementById('event-importance').value = eventToEdit.importance || 'average';
+
+          const autoDeferEl = document.getElementById('event-auto-defer');
+          if (autoDeferEl) autoDeferEl.checked = !!eventToEdit.autoDefer;
 
           const placeTypeSelect = document.getElementById('place-type');
           const placeUrlInput = document.getElementById('place-url');
@@ -3130,50 +3283,290 @@
           if (currentUser) triggerAutoSync();
       }
 
-      function updateAndScheduleNotifications(times) {
+      // ======================================================
+      // SMART NOTIFICATIONS / DO NOT DISTURB / WAKE-UP STRATEGY
+      // (Ugyanaz a logika, mint a fő Aftercup Calendar appban — ide, az
+      // e-paper/MP01-változatba is átültetve, mert a push-infrastruktúra
+      // itt egyszerűbb, de az IDŐPONT-SZÁMÍTÁS logikája ugyanaz maradhat.)
+      // ======================================================
+
+      function isDoNotDisturbEnabled() {
+          return localStorage.getItem(DO_NOT_DISTURB_KEY) === 'true';
+      }
+
+      function isSmartNotificationsEnabled() {
+          return localStorage.getItem(SMART_NOTIFICATIONS_KEY) === 'true';
+      }
+
+      function getWakeupStrategy() {
+          try {
+              const saved = JSON.parse(localStorage.getItem(WAKEUP_STRATEGY_KEY));
+              if (saved && typeof saved === 'object') {
+                  return {
+                      useShiftPlanner: !!saved.useShiftPlanner,
+                      weekday: saved.weekday || DEFAULT_WAKEUP_STRATEGY.weekday,
+                      weekend: saved.weekend || DEFAULT_WAKEUP_STRATEGY.weekend,
+                      shiftTimes: Object.assign({}, DEFAULT_WAKEUP_STRATEGY.shiftTimes, saved.shiftTimes || {})
+                  };
+              }
+          } catch (e) {}
+          return JSON.parse(JSON.stringify(DEFAULT_WAKEUP_STRATEGY));
+      }
+
+      // A mai napra érvényes ébredési idő — hétköznapi/hétvégi alapból, vagy
+      // (ha be van kapcsolva) a Shift Planner aznapi műszaktípusa alapján.
+      // Pihenőnap/szabadnap/betegszabadság vagy be nem jegyzett nap esetén a
+      // hétköznapi/hétvégi alapértelmezettre esünk vissza.
+      function getTodaysWakeupTime() {
+          const strategy = getWakeupStrategy();
+          const now = new Date();
+          const isWeekend = (now.getDay() === 0 || now.getDay() === 6);
+          const fallback = isWeekend ? strategy.weekend : strategy.weekday;
+          if (!strategy.useShiftPlanner) return fallback;
+
+          const savedShifts = JSON.parse(localStorage.getItem('shifts')) || {};
+          const shiftKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+          const shiftClass = savedShifts[shiftKey];
+          if (shiftClass && strategy.shiftTimes && strategy.shiftTimes[shiftClass]) {
+              return strategy.shiftTimes[shiftClass];
+          }
+          return fallback;
+      }
+
+      function subtractMinutesFromTime(hhmm, minutesToSubtract) {
+          if (!hhmm) return null;
+          const parts = hhmm.split(':').map(Number);
+          if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return null;
+          let total = parts[0] * 60 + parts[1] - minutesToSubtract;
+          if (total < 0) total = 0;
+          const nh = Math.floor(total / 60);
+          const nm = total % 60;
+          return (nh < 10 ? '0' : '') + nh + ':' + (nm < 10 ? '0' : '') + nm;
+      }
+
+      function averageOfTimes(timeStrings) {
+          if (!timeStrings || timeStrings.length === 0) return null;
+          const totalMinutes = timeStrings.reduce((sum, t) => {
+              const parts = t.split(':').map(Number);
+              if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return sum;
+              return sum + parts[0] * 60 + parts[1];
+          }, 0);
+          const avg = Math.round(totalMinutes / timeStrings.length);
+          const h = Math.floor(avg / 60), m = avg % 60;
+          return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+      }
+
+      function computeTypicalTimeForEvents(todaysEvents) {
+          const timedEvents = todaysEvents.filter(e => e.time);
+          if (timedEvents.length > 0) return averageOfTimes(timedEvents.map(e => e.time));
+          const writingTimes = todaysEvents
+              .map(e => {
+                  const ts = e.lastModified || e.id;
+                  if (!ts) return null;
+                  const d = new Date(Number(ts));
+                  if (isNaN(d.getTime())) return null;
+                  return d.toTimeString().slice(0, 5);
+              })
+              .filter(Boolean);
+          if (writingTimes.length > 0) return averageOfTimes(writingTimes);
+          return '09:00';
+      }
+
+      function minutesBetweenTimes(t1, t2) {
+          const [h1, m1] = t1.split(':').map(Number);
+          const [h2, m2] = t2.split(':').map(Number);
+          return (h2 * 60 + m2) - (h1 * 60 + m1);
+      }
+
+      function groupCloseSmartTimes(entries, thresholdMinutes = 45) {
+          if (entries.length <= 1) return entries;
+          const sorted = [...entries].sort((a, b) => a.time.localeCompare(b.time));
+          const groups = [[sorted[0]]];
+          for (let i = 1; i < sorted.length; i++) {
+              const currentGroup = groups[groups.length - 1];
+              const prevTime = currentGroup[currentGroup.length - 1].time;
+              if (minutesBetweenTimes(prevTime, sorted[i].time) <= thresholdMinutes) {
+                  currentGroup.push(sorted[i]);
+              } else {
+                  groups.push([sorted[i]]);
+              }
+          }
+          return groups.map(group => {
+              if (group.length === 1) return group[0];
+              const labels = group.map(g => g.label);
+              const shownLabels = labels.slice(0, 2).join(', ') + (labels.length > 2 ? `, +${labels.length - 2} more` : '');
+              return { time: averageOfTimes(group.map(g => g.time)), label: shownLabels, kind: 'grouped' };
+          });
+      }
+
+      // Smart értesítések: teljesen üres napon nincs semmi. Fontos (high
+      // importance) elem esetén minden ilyen elé külön emlékeztető kerül
+      // (~1,5 órával előtte, vagy az első időzített elem elé 4-6 órával,
+      // ha sok időpont nélküli dolog van aznapra). Ha nincs fontos elem,
+      // egyetlen összesített emlékeztető van. Sosem megy ki a mai Wake-up
+      // strategy időpont ELŐTT — ha korábbra esne, arra tolódik.
+      function computeSmartNotificationTimes() {
+          const todayStr = getLocalDateString(new Date());
+          const todaysEvents = getVisibleEvents().filter(e => {
+              if (e.preAdded) return false;
+              return e.date === todayStr;
+          });
+          if (todaysEvents.length === 0) return [];
+
+          const IMPORTANT_LEAD_MINUTES = 90;
+          const SUMMARY_LEAD_MINUTES = 60;
+          const GROUPING_THRESHOLD_MINUTES = 45;
+          const MANY_UNTIMED_THRESHOLD = 3;
+          const MANY_UNTIMED_LEAD_MINUTES = 300;
+
+          const importantEvents = todaysEvents.filter(e => e.importance === 'high');
+          const typicalTime = computeTypicalTimeForEvents(todaysEvents);
+          const noUserTimes = !dailyNotificationTimes || dailyNotificationTimes.length === 0;
+
+          let summaryAnchorTime = typicalTime;
+          let summaryLeadMinutes = SUMMARY_LEAD_MINUTES;
+          if (noUserTimes) {
+              const timedTimes = todaysEvents.filter(e => e.time).map(e => e.time).sort();
+              const untimedCount = todaysEvents.length - timedTimes.length;
+              if (timedTimes.length > 0) {
+                  summaryAnchorTime = timedTimes[0];
+                  if (untimedCount >= MANY_UNTIMED_THRESHOLD) summaryLeadMinutes = MANY_UNTIMED_LEAD_MINUTES;
+              }
+          }
+
+          let smart;
+          if (importantEvents.length > 0) {
+              let importantReminders = importantEvents.map(e => {
+                  const baseTime = e.time || typicalTime;
+                  const reminderTime = subtractMinutesFromTime(baseTime, IMPORTANT_LEAD_MINUTES);
+                  return { time: reminderTime, label: e.text || 'Important item', kind: 'important' };
+              }).filter(s => s.time);
+
+              importantReminders = groupCloseSmartTimes(importantReminders, GROUPING_THRESHOLD_MINUTES);
+              smart = importantReminders;
+
+              if (noUserTimes) {
+                  const earliestImportant = smart.length > 0
+                      ? smart.reduce((min, s) => (s.time < min ? s.time : min), smart[0].time)
+                      : null;
+                  let summaryTime = subtractMinutesFromTime(summaryAnchorTime, summaryLeadMinutes);
+                  if (summaryTime && earliestImportant && summaryTime >= earliestImportant) {
+                      summaryTime = subtractMinutesFromTime(earliestImportant, 30);
+                  }
+                  if (summaryTime) smart.push({ time: summaryTime, label: 'Daily summary', kind: 'summary' });
+              }
+          } else {
+              const reminderTime = subtractMinutesFromTime(summaryAnchorTime, summaryLeadMinutes);
+              smart = reminderTime ? [{ time: reminderTime, label: 'Daily summary', kind: 'summary' }] : [];
+          }
+
+          const seenTimes = new Set();
+          let result = smart
+              .filter(s => { if (seenTimes.has(s.time)) return false; seenTimes.add(s.time); return true; })
+              .sort((a, b) => a.time.localeCompare(b.time));
+
+          const wakeupTime = getTodaysWakeupTime();
+          if (wakeupTime) {
+              result = result.map(s => s.time < wakeupTime ? Object.assign({}, s, { time: wakeupTime }) : s);
+              const seenAfterClamp = new Set();
+              result = result
+                  .filter(s => { if (seenAfterClamp.has(s.time)) return false; seenAfterClamp.add(s.time); return true; })
+                  .sort((a, b) => a.time.localeCompare(b.time));
+          }
+
+          return result;
+      }
+
+      // A ténylegesen érvényes, összevont időpont-lista (user-megadott +
+      // — ha be van kapcsolva — a mai smart javaslatok). Do Not Disturb
+      // esetén üres lista (semmi nem megy ki).
+      function getEffectiveNotificationTimes() {
+          if (isDoNotDisturbEnabled()) return [];
+          const smartTimes = isSmartNotificationsEnabled() ? computeSmartNotificationTimes().map(s => s.time) : [];
+          return [...new Set([...(dailyNotificationTimes || []), ...smartTimes])].sort();
+      }
+
+      // Korábbi napról maradt, be nem fejezett, "auto defer" jelölésű
+      // task-okat automatikusan a mai napra tol.
+      function runAutomaticTaskDeferral() {
+          const todayStr = getLocalDateString(new Date());
+          let changed = false;
+          events.forEach(e => {
+              if (e.type === 'task' && e.autoDefer && !e.completed && !e.preAdded && !e.deleted && e.date && e.date < todayStr) {
+                  e.date = todayStr;
+                  e.wasDeferred = true;
+                  e.lastModified = Date.now();
+                  changed = true;
+              }
+          });
+          return changed;
+      }
+
+      // ÚJ: megpróbál valódi FCM push-ot regisztrálni (ugyanaz a szerver
+      // végpont, mint a fő appnál: save_notification_token). Ha sikerül,
+      // true-t ad vissza — ilyenkor a hívó nem indítja el a helyi
+      // (setTimeout-alapú) tartalék-ütemezést is, hogy ne jöjjön duplán.
+      async function tryRegisterFcmPush(times) {
+          if (!isFirebaseConfigured || !firebaseMessaging) return false;
+          try {
+              const registration = await navigator.serviceWorker.ready;
+              const token = await Promise.race([
+                  firebaseMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: registration }),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('FCM getToken timeout')), 15000))
+              ]);
+              if (!token) return false;
+              localStorage.setItem(FCM_TOKEN_KEY, token);
+              const result = await apiRequest({
+                  action: 'save_notification_token',
+                  email: currentUser ? currentUser.email : null,
+                  token: token,
+                  times: times
+              });
+              return !!(result && result.status === 'success');
+          } catch (e) {
+              console.warn('FCM push registration failed, falling back to local scheduling:', e);
+              return false;
+          }
+      }
+
+      async function updateAndScheduleNotifications(times) {
           localStorage.setItem(DAILY_SUMMARY_TIMES_KEY, JSON.stringify(times));
           dailyNotificationTimes = times;
           localStorage.removeItem(LAST_NOTIFIED_TIMES_KEY);
           if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
-          navigator.serviceWorker.ready.then(registration => {
-              if (registration.active) registration.active.postMessage({ type: 'schedule-summary-notifications', times: times });
-          });
+
+          const effectiveTimes = getEffectiveNotificationTimes();
+          const fcmSuccess = await tryRegisterFcmPush(effectiveTimes);
+
+          if (!fcmSuccess) {
+              // Nincs valódi push (nem támogatott böngésző, vagy a regisztráció
+              // meghiúsult) — helyi (setTimeout-alapú) ütemezésre esünk vissza.
+              navigator.serviceWorker.ready.then(registration => {
+                  if (registration.active) registration.active.postMessage({ type: 'schedule-summary-notifications', times: effectiveTimes });
+              });
+          }
       }
 
       async function scheduleAutomaticNotifications() {
-          if (dailyNotificationTimes && dailyNotificationTimes.length > 0) {
-              if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                  navigator.serviceWorker.controller.postMessage({ type: 'schedule-summary-notifications', times: dailyNotificationTimes });
-              }
-              return;
+          const effectiveTimes = getEffectiveNotificationTimes();
+          if (!('serviceWorker' in navigator) || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+          const fcmSuccess = (effectiveTimes.length > 0) ? await tryRegisterFcmPush(effectiveTimes) : false;
+
+          if (!fcmSuccess && navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage({ type: 'schedule-summary-notifications', times: effectiveTimes });
           }
-          const todayStr = getLocalDateString(new Date());
-          let automaticTime;
-          const firstEvent = getVisibleEvents()
-              .filter(e => e.date === todayStr && e.time)
-              .sort((a, b) => a.time.localeCompare(b.time))[0];
-          if (firstEvent) {
-              const [hours, minutes] = firstEvent.time.split(':').map(Number);
-              const eventDate = new Date();
-              eventDate.setHours(hours, minutes, 0, 0);
-              eventDate.setMinutes(eventDate.getMinutes() - 30);
-              const notifyHours = eventDate.getHours().toString().padStart(2, '0');
-              const notifyMinutes = eventDate.getMinutes().toString().padStart(2, '0');
-              automaticTime = `${notifyHours}:${notifyMinutes}`;
-          } else {
-              automaticTime = "08:00";
-          }
-          await updateAndScheduleNotifications([automaticTime]);
       }
 
       async function checkForegroundNotifications() {
-          if (document.hidden || dailyNotificationTimes.length === 0 || Notification.permission !== 'granted') return;
+          const effectiveTimes = getEffectiveNotificationTimes();
+          if (document.hidden || effectiveTimes.length === 0 || Notification.permission !== 'granted') return;
           const now = new Date();
           const currentTimeStr = now.toTimeString().slice(0, 5);
           const todayDateStr = getLocalDateString(now);
           let lastNotified = JSON.parse(localStorage.getItem(LAST_NOTIFIED_TIMES_KEY)) || {};
 
-          for (const timeStr of dailyNotificationTimes) {
+          for (const timeStr of effectiveTimes) {
               if (timeStr === currentTimeStr && lastNotified[timeStr] !== todayDateStr) {
                   const todaysEvents = getVisibleEvents().filter(e => e.date === todayDateStr);
                   const weatherSummary = await getWeatherSummary();
@@ -3212,10 +3605,11 @@
           const total = todaysEvents.length;
           if (total === 0) return (weatherSummary ? `Your schedule is clear today.${weatherSummary}` : "Your schedule is clear for today.");
 
-          const counts = { event: 0, task: 0, note: 0, high: 0, routine: 0 };
+          const counts = { event: 0, task: 0, note: 0, high: 0, routine: 0, deferred: 0 };
           todaysEvents.forEach(e => {
               counts[e.type] = (counts[e.type] || 0) + 1;
               if (e.importance === 'high') counts.high++;
+              if (e.type === 'task' && e.wasDeferred) counts.deferred++;
           });
 
           let summaryParts = [];
@@ -3230,6 +3624,7 @@
           else baseSummary = `It looks like a busy day ahead with ${total} items: ${summaryParts.join(', ')}.`;
 
           if (counts.high > 0) baseSummary += ` ${counts.high === 1 ? '1 of them is important.' : `${counts.high} of them are important.`}`;
+          if (counts.deferred > 0) baseSummary += ` ${counts.deferred === 1 ? '1 task carried over from yesterday.' : `${counts.deferred} tasks carried over from yesterday.`}`;
           return baseSummary + (weatherSummary || '');
       }
 
