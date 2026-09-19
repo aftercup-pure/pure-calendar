@@ -401,6 +401,7 @@
         .main-menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
             gap: 10px;
         }
 
@@ -971,17 +972,18 @@
             }
             .main-menu-grid {
                 flex: 1; 
-                gap: 15px;
+                gap: 8px;
+                grid-template-rows: repeat(4, 1fr);
             }
             .tiled-btn {
                 padding: 0; 
             }
             .tiled-btn .material-icons-outlined {
-                font-size: 46px !important;
-                margin-bottom: 8px;
+                font-size: 32px !important;
+                margin-bottom: 5px;
             }
             .tiled-btn span:not(.material-icons-outlined) {
-                font-size: 1.1rem !important;
+                font-size: 0.85rem !important;
             }
             #main-menu-popup .popup-btn {
                 padding: 20px;
@@ -1075,7 +1077,7 @@
                 <span>Dates</span>
             </button>
             <button class="tiled-btn" onclick="showTodaySummaryPopup()">
-                <span class="material-icons-outlined">notifications</span>
+                <span class="material-icons-outlined">wb_sunny</span>
                 <span>Brief</span>
             </button>
             <button class="tiled-btn" onclick="showUpcomingPopup()">
@@ -1098,10 +1100,19 @@
                 <span class="material-icons-outlined">history</span>
                 <span>History</span>
             </button>
+            <button class="tiled-btn" onclick="showNotificationsPopup()">
+                <span class="material-icons-outlined">notifications</span>
+                <span>Notifications</span>
+            </button>
+            <button class="tiled-btn" onclick="showAccountPopup()">
+                <span class="material-icons-outlined">person</span>
+                <span>Account</span>
+            </button>
+            <button class="tiled-btn" onclick="showSettingsPopup()">
+                <span class="material-icons-outlined">settings</span>
+                <span>Settings</span>
+            </button>
         </div>
-        <button class="popup-btn" style="margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="showAccountPopup()">
-            <span class="material-icons-outlined">settings</span> Settings
-        </button>
     </div>
 
     <div id="add-popup" class="popup">
@@ -1219,10 +1230,15 @@
             <h3>Aftercup Posts</h3>
             <div id="aftercup-posts-content"></div>
         </div>
+    </div>
 
-        <h3 style="margin-top: 20px;">Do Not Disturb</h3>
+    <div id="notifications-popup" class="popup">
+        <h2>Notifications</h2>
+        <div id="notifications-next-summary" style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;"></div>
+
+        <h3>Do Not Disturb</h3>
         <label class="task-checkbox-label" style="display:block; margin-bottom: 15px;">
-            <input type="checkbox" id="dnd-toggle" onchange="localStorage.setItem(DO_NOT_DISTURB_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications();"> Pause all reminders
+            <input type="checkbox" id="dnd-toggle" onchange="localStorage.setItem(DO_NOT_DISTURB_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications(); refreshNotificationsSummary();"> Pause all reminders
         </label>
 
         <h3 style="margin-top: 20px;">Notification Times</h3>
@@ -1230,7 +1246,7 @@
         <button class="icon-btn" style="width:100%; border: 2px dashed var(--border-color); margin-bottom: 15px; font-weight:bold;" onclick="addSummaryNotificationTimeInput()">+ Add Time</button>
 
         <label class="task-checkbox-label" style="display:block; margin-bottom: 15px;">
-            <input type="checkbox" id="smart-notifications-toggle" onchange="localStorage.setItem(SMART_NOTIFICATIONS_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications();"> Smart notifications (auto-timed to today's events)
+            <input type="checkbox" id="smart-notifications-toggle" onchange="localStorage.setItem(SMART_NOTIFICATIONS_KEY, this.checked ? 'true' : 'false'); scheduleAutomaticNotifications(); refreshNotificationsSummary();"> Smart notifications (auto-timed to today's events)
         </label>
 
         <button class="popup-btn" onclick="saveSummaryNotificationSettings()">Save Notification Times</button>
@@ -1289,7 +1305,7 @@
     </div>
 
     <div id="account-popup" class="popup">
-        <h2>Settings</h2>
+        <h2>Account</h2>
         
         <div id="auth-forms">
             <div id="login-form-container">
@@ -1336,25 +1352,6 @@
             <button class="popup-btn" style="margin-top: 10px; background: transparent; color: var(--text-color);" onclick="handleLogout()">Logout</button>
         </div>
 
-        <h3 style="margin-top: 20px;">Shortcuts</h3>
-        <div class="kbd-grid">
-            <div><span class="kbd-shortcut">↵</span> New</div>
-            <div><span class="kbd-shortcut">F</span> Search</div>
-            <div><span class="kbd-shortcut">T</span> Tmrw</div>
-            <div><span class="kbd-shortcut">Y</span> Ystrdy</div>
-            <div><span class="kbd-shortcut">N</span> Today</div>
-            <div><span class="kbd-shortcut">A</span> Brief</div>
-            <div><span class="kbd-shortcut">S</span> Settings</div>
-            <div><span class="kbd-shortcut">C</span> Calendar</div>
-            <div><span class="kbd-shortcut">H</span> Shifts</div>
-            <div><span class="kbd-shortcut">P</span> Pocket</div>
-            <div><span class="kbd-shortcut">D</span> Dreams</div>
-            <div><span class="kbd-shortcut">U</span> Upcoming</div>
-            <div><span class="kbd-shortcut">I</span> History</div>
-            <div><span class="kbd-shortcut">0-9</span> Jump</div>
-            <div><span class="kbd-shortcut">⌫</span> Back</div>
-        </div>
-
         <h3 style="margin-top: 20px;">Data</h3>
         <button class="popup-btn" style="margin-bottom: 10px;" onclick="backupEventsData()">Download Backup</button>
         <button class="popup-btn" style="margin-bottom: 10px; border-style: dashed;" onclick="triggerRestore()">Restore from File</button>
@@ -1376,7 +1373,30 @@
             Export GCal
         </button>
         <div id="last-export-time" style="font-size: 0.8em; font-weight:bold; margin-bottom: 15px; font-family: var(--font-mono); text-align: left; padding-left: 5px;"></div>
-        
+    </div>
+
+    <div id="settings-popup" class="popup">
+        <h2>Settings</h2>
+
+        <h3>Shortcuts</h3>
+        <div class="kbd-grid">
+            <div><span class="kbd-shortcut">↵</span> New</div>
+            <div><span class="kbd-shortcut">F</span> Search</div>
+            <div><span class="kbd-shortcut">T</span> Tmrw</div>
+            <div><span class="kbd-shortcut">Y</span> Ystrdy</div>
+            <div><span class="kbd-shortcut">N</span> Today</div>
+            <div><span class="kbd-shortcut">A</span> Brief</div>
+            <div><span class="kbd-shortcut">S</span> Settings</div>
+            <div><span class="kbd-shortcut">C</span> Calendar</div>
+            <div><span class="kbd-shortcut">H</span> Shifts</div>
+            <div><span class="kbd-shortcut">P</span> Pocket</div>
+            <div><span class="kbd-shortcut">D</span> Dreams</div>
+            <div><span class="kbd-shortcut">U</span> Upcoming</div>
+            <div><span class="kbd-shortcut">I</span> History</div>
+            <div><span class="kbd-shortcut">0-9</span> Jump</div>
+            <div><span class="kbd-shortcut">⌫</span> Back</div>
+        </div>
+
         <h3 style="margin-top: 20px;">Theme</h3>
         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
             <button onclick="changeTheme('light')" style="padding: 10px 20px; border: 2px solid #000; font-weight:bold;">Light</button>
@@ -1841,7 +1861,7 @@
                   case 'y': e.preventDefault(); switchToRelativeDay(-1); break;
                   case 'n': e.preventDefault(); goToToday(); break;
                   case 'a': e.preventDefault(); showTodaySummaryPopup(); break;
-                  case 's': e.preventDefault(); showAccountPopup(); break;
+                  case 's': e.preventDefault(); showSettingsPopup(); break;
                   case 'h': e.preventDefault(); openShiftPlanner(); break;
                   case 'p': e.preventDefault(); showPocketPopup(); break;
                   case 'd': e.preventDefault(); showDreamsPopup(); break;
@@ -2297,6 +2317,7 @@
 
           localStorage.setItem(WAKEUP_STRATEGY_KEY, JSON.stringify(strategy));
           scheduleAutomaticNotifications();
+          refreshNotificationsSummary();
       }
 
       function showUpcomingPopup() {
@@ -3254,6 +3275,7 @@
                   if (className && className !== "delete") savedShifts[shiftKey] = className;
                   else savedShifts[shiftKey] = "";
                   localStorage.setItem("shifts", JSON.stringify(savedShifts));
+                  localStorage.setItem("shifts_last_modified", Date.now().toString());
                   closeSpSelectPopup();
                   spRenderCalendar();
                   if (currentUser) triggerAutoSync();
@@ -3711,6 +3733,68 @@
           hideActionButtons();
       }
 
+      function showSettingsPopup() {
+          hidePopups(true);
+          const popup = document.getElementById('settings-popup');
+          document.getElementById('overlay').style.display = 'block';
+          document.getElementById('overlay').style.zIndex = '1005';
+          popup.classList.add('active');
+          history.pushState({ popup: 'settings-popup' }, '', null);
+          hideActionButtons();
+      }
+
+      function showNotificationsPopup() {
+          hidePopups(true);
+          const popup = document.getElementById('notifications-popup');
+          document.getElementById('overlay').style.display = 'block';
+          document.getElementById('overlay').style.zIndex = '1005';
+          popup.classList.add('active');
+
+          populateSummaryNotificationTimeInputs();
+          const dndToggle = document.getElementById('dnd-toggle');
+          if (dndToggle) dndToggle.checked = isDoNotDisturbEnabled();
+          const smartToggle = document.getElementById('smart-notifications-toggle');
+          if (smartToggle) smartToggle.checked = isSmartNotificationsEnabled();
+          populateWakeupStrategyFields();
+          refreshNotificationsSummary();
+
+          history.pushState({ popup: 'notifications-popup' }, '', null);
+          hideActionButtons();
+      }
+
+      // Felül mutatja a legközelebbi emlékeztető időpontját, plusz a mai
+      // (saját + smart) lista rövid felsorolását — hasonlóan a fő
+      // Aftercup Calendar app Notifications popupjához.
+      function refreshNotificationsSummary() {
+          const container = document.getElementById('notifications-next-summary');
+          if (!container) return;
+
+          if (isDoNotDisturbEnabled()) {
+              container.innerHTML = `<div style="font-weight:bold; font-size:1.1rem;">Do Not Disturb is on</div><div style="font-size:0.85rem; margin-top:5px;">No reminders will fire.</div>`;
+              return;
+          }
+
+          const smartEnabled = isSmartNotificationsEnabled();
+          const smartTimes = smartEnabled ? computeSmartNotificationTimes() : [];
+          const userTimes = [...(dailyNotificationTimes || [])].sort();
+
+          const combined = [
+              ...userTimes.map(t => ({ time: t, label: 'Your reminder' })),
+              ...smartTimes.map(s => ({ time: s.time, label: s.label + (s.kind === 'grouped' ? ' (grouped)' : (s.kind ? ' (smart)' : '')) }))
+          ].sort((a, b) => a.time.localeCompare(b.time));
+
+          if (combined.length === 0) {
+              container.innerHTML = `<div style="font-weight:bold; font-size:1.1rem;">No reminders today</div>`;
+              return;
+          }
+
+          const nowStr = new Date().toTimeString().slice(0, 5);
+          const next = (combined.find(c => c.time > nowStr) || combined[0]).time;
+
+          const listHtml = combined.map(c => `<div style="font-size:0.85rem; margin-top:4px;">${c.time} — ${c.label}</div>`).join('');
+          container.innerHTML = `<div style="font-weight:bold; font-size:1.6rem;">${next}</div><div style="font-size:0.8rem; opacity:0.8; margin-bottom:8px;">Next reminder</div>${listHtml}`;
+      }
+
       function updateAccountUI() {
           const loginView = document.getElementById('auth-forms');
           const loggedInView = document.getElementById('logged-in-view');
@@ -3802,7 +3886,11 @@
           const backup = { timestamp: Date.now(), dataType: "AftercupCalendarFullBackup" };
           if (syncPrefs.events) backup.events = events.filter(e => !e.preAdded);
           if (syncPrefs.dreams) backup.dreams = dreams;
-          if (syncPrefs.shifts) backup.shifts = JSON.parse(localStorage.getItem("shifts") || "{}");
+          if (syncPrefs.shifts) {
+              backup.shifts = JSON.parse(localStorage.getItem("shifts") || "{}");
+              const shiftsModStr = localStorage.getItem("shifts_last_modified");
+              backup.shifts_last_modified = parseInt(shiftsModStr || Date.now().toString(), 10);
+          }
           if (syncPrefs.settings) backup.settings = { 
               theme: localStorage.getItem('theme'), 
               pattern: localStorage.getItem('pattern') || 'none', 
