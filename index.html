@@ -157,6 +157,22 @@
             mix-blend-mode: screen;
         }
 
+        body.pattern-swan::before {
+            content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("https://i.postimg.cc/02s3X8Dt/Untitled-2026-majus-12-00-40-30-4.png");
+            background-size: 160px auto;
+            background-repeat: repeat;
+            background-position: center center;
+            opacity: var(--pattern-opacity);
+            mix-blend-mode: multiply;
+            z-index: -1; pointer-events: none;
+        }
+
+        body.dark-theme.pattern-swan::before {
+            filter: invert(1);
+            mix-blend-mode: screen;
+        }
+
         body.pattern-snowflakes::before {
             content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background-color: var(--pattern-color);
@@ -1378,6 +1394,7 @@
             <button class="pattern-btn" data-pattern="horse" onclick="changePattern('horse')">Horse</button>
             <button class="pattern-btn" data-pattern="monstera" onclick="changePattern('monstera')">Monstera</button>
             <button class="pattern-btn" data-pattern="tulip" onclick="changePattern('tulip')">Tulip</button>
+            <button class="pattern-btn" data-pattern="swan" onclick="changePattern('swan')">Swan</button>
             <button class="pattern-btn" data-pattern="snowflakes" onclick="changePattern('snowflakes')">Snow</button>
         </div>
 
