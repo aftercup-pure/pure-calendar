@@ -1689,6 +1689,29 @@
       let gisInited = false;
 
       document.addEventListener('DOMContentLoaded', async () => {
+          // HIBAJAVÍTÁS (szinkron-bug): lásd bővebben a fő app azonos
+          // helyén lévő kommentet — a 2 másodperces szinkron-késleltetés
+          // miatt gyors bezáráskor elveszhetett egy változás (pl. egy
+          // feladat áthelyezése másik napra); most azonnal lefut, amint
+          // az app háttérbe kerül.
+          //
+          // MÁSODIK JAVÍTÁS: eddig csak induláskor húzta le a felhőben lévő
+          // változásokat — visszatéréskor (tab újra látható) most egy friss
+          // (max. 20 másodpercenkénti) pull is lefut.
+          let lastPullTimestamp = Date.now();
+          document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'hidden' && syncDebounceTimer) {
+                  clearTimeout(syncDebounceTimer);
+                  syncDebounceTimer = null;
+                  if (currentUser) performSync('push');
+              } else if (document.visibilityState === 'visible' && currentUser && autoSyncEnabled) {
+                  if (Date.now() - lastPullTimestamp > 20000) {
+                      lastPullTimestamp = Date.now();
+                      performSync('pull');
+                  }
+              }
+          });
+
           const todayStr = getLocalDateString(new Date());
           const lastResetDate = localStorage.getItem(APP_LAST_RESET_DATE_KEY);
 
