@@ -1373,6 +1373,17 @@
             Export GCal
         </button>
         <div id="last-export-time" style="font-size: 0.8em; font-weight:bold; margin-bottom: 15px; font-family: var(--font-mono); text-align: left; padding-left: 5px;"></div>
+
+        <h3 style="margin-top: 20px;">ICS File</h3>
+        <button class="popup-btn" onclick="exportToICS()" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 10px; border: 2px solid var(--border-color); background: transparent; color: var(--text-color);">
+            <span class="material-icons-outlined">file_download</span>
+            Export .ics
+        </button>
+        <button class="popup-btn" onclick="triggerIcsImport()" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 10px; border: 2px solid var(--border-color); background: transparent; color: var(--text-color);">
+            <span class="material-icons-outlined">file_upload</span>
+            Import .ics
+        </button>
+        <input type="file" id="ics-import-input" accept=".ics,text/calendar" style="display:none;" onchange="handleIcsImport(this)">
     </div>
 
     <div id="settings-popup" class="popup">
@@ -3060,6 +3071,143 @@
               };
               resultsContainer.appendChild(resultItem);
           });
+      }
+
+      // ======================================================
+      // ÚJ: ICS (iCalendar) IMPORT / EXPORT — szabványos .ics fájlok
+      // beolvasása/kiírása, hogy más naptár-appokkal (Google, Apple,
+      // Outlook, stb.) is átjárható legyen az Aftercup Calendar adata.
+      // ======================================================
+
+      function icsEscape(text) {
+          return String(text || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\n|\r/g, '\\n');
+      }
+
+      function icsUnescape(text) {
+          return String(text || '').replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+      }
+
+      function stripHtmlForIcs(html) {
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html || '';
+          return tmp.textContent || tmp.innerText || '';
+      }
+
+      function icsTimestampNow() {
+          const d = new Date();
+          return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0') +
+              'T' + String(d.getUTCHours()).padStart(2, '0') + String(d.getUTCMinutes()).padStart(2, '0') + String(d.getUTCSeconds()).padStart(2, '0') + 'Z';
+      }
+
+      function exportToICS() {
+          const exportable = getVisibleEvents().filter(e => !e.preAdded && (e.type === 'event' || e.type === 'task' || e.type === 'routine'));
+          if (exportable.length === 0) { alert('Nothing to export yet.'); return; }
+
+          let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Aftercup Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+
+          exportable.forEach(e => {
+              const dateCompact = String(e.date).replace(/-/g, '');
+              ics += 'BEGIN:VEVENT\r\n';
+              ics += `UID:${e.id}@aftercup-calendar\r\n`;
+              ics += `DTSTAMP:${icsTimestampNow()}\r\n`;
+
+              if (e.time) {
+                  const [h, m] = e.time.split(':');
+                  const startDT = `${dateCompact}T${h.padStart(2, '0')}${m.padStart(2, '0')}00`;
+                  const endDate = new Date(`${e.date}T${e.time}`);
+                  endDate.setMinutes(endDate.getMinutes() + 30);
+                  const endDT = `${dateCompact}T${String(endDate.getHours()).padStart(2, '0')}${String(endDate.getMinutes()).padStart(2, '0')}00`;
+                  ics += `DTSTART:${startDT}\r\n`;
+                  ics += `DTEND:${endDT}\r\n`;
+              } else {
+                  ics += `DTSTART;VALUE=DATE:${dateCompact}\r\n`;
+              }
+
+              const title = e.type === 'note' ? stripHtmlForIcs(e.text) : (e.text || 'Untitled');
+              ics += `SUMMARY:${icsEscape(title)}\r\n`;
+              if (e.place && e.place.value) ics += `LOCATION:${icsEscape(e.place.value)}\r\n`;
+              if (e.importance === 'high') ics += 'PRIORITY:1\r\n';
+              ics += 'END:VEVENT\r\n';
+          });
+
+          ics += 'END:VCALENDAR\r\n';
+
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+          a.download = `aftercup-calendar-${getLocalDateString(new Date())}.ics`;
+          a.click();
+      }
+
+      function triggerIcsImport() {
+          document.getElementById('ics-import-input').click();
+      }
+
+      function parseICS(icsText) {
+          const parsed = [];
+          const blocks = icsText.split('BEGIN:VEVENT').slice(1);
+
+          blocks.forEach(block => {
+              const endIdx = block.indexOf('END:VEVENT');
+              if (endIdx === -1) return;
+              const content = block.substring(0, endIdx);
+              // Sortörés-összefűzés: az RFC 5545 szerint egy szóközzel/tabbal
+              // kezdődő sor az előző sor folytatása.
+              const unfolded = content.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
+              const lines = unfolded.split(/\r\n|\n|\r/).map(l => l.trim()).filter(Boolean);
+
+              let summary = '', dtstartRaw = '', location = '', hasTime = false;
+              lines.forEach(line => {
+                  const colonIdx = line.indexOf(':');
+                  if (colonIdx === -1) return;
+                  const key = line.substring(0, colonIdx);
+                  const value = line.substring(colonIdx + 1);
+                  if (key.startsWith('SUMMARY')) summary = icsUnescape(value);
+                  else if (key.startsWith('DTSTART')) { dtstartRaw = value; hasTime = value.includes('T'); }
+                  else if (key.startsWith('LOCATION')) location = icsUnescape(value);
+              });
+
+              if (!dtstartRaw || dtstartRaw.length < 8) return;
+              const dateStr = `${dtstartRaw.substring(0, 4)}-${dtstartRaw.substring(4, 6)}-${dtstartRaw.substring(6, 8)}`;
+              let timeStr = '';
+              if (hasTime && dtstartRaw.length >= 13) {
+                  timeStr = `${dtstartRaw.substring(9, 11)}:${dtstartRaw.substring(11, 13)}`;
+              }
+
+              parsed.push({
+                  id: Date.now() + Math.floor(Math.random() * 100000),
+                  type: 'event',
+                  date: dateStr,
+                  time: timeStr,
+                  text: summary || 'Imported event',
+                  color: '#FFFFFF',
+                  importance: 'average',
+                  place: location ? { type: 'physical', value: location } : { type: 'none', value: '' },
+                  preAdded: false,
+                  lastModified: Date.now()
+              });
+          });
+
+          return parsed;
+      }
+
+      function handleIcsImport(inputEl) {
+          const file = inputEl.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              const imported = parseICS(e.target.result);
+              if (imported.length === 0) {
+                  alert('No events found in this .ics file.');
+                  inputEl.value = '';
+                  return;
+              }
+              events = events.concat(imported);
+              saveEvents();
+              updateCalendar();
+              alert(`Imported ${imported.length} event(s) from the .ics file.`);
+              inputEl.value = '';
+          };
+          reader.readAsText(file);
       }
 
       function backupEventsData() {
