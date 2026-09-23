@@ -1,4 +1,5 @@
 [
+   { "id": 109, "type": "event", "date": "2026-09-23", "time": "20:00", "text": "📰 Pem Delian - Daytime Hero", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/367", "importance": "average" },
    { "id": 108, "type": "event", "date": "2026-09-19", "time": "15:00", "text": "📰 LYR", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/366", "importance": "average" },
    { "id": 107, "type": "event", "date": "2026-09-07", "time": "11:00", "text": "📰 3in1 a bánya felett", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/364", "importance": "average" },
    { "id": 106, "type": "event", "date": "2026-09-05", "time": "15:00", "text": "📰 Cafe Frei (Király utca)", "color": "#FFFFFF", "link": "https://aftercup.space/Posts/363", "importance": "average" },
