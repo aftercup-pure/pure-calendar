@@ -1586,6 +1586,10 @@
       let currentUser = safeParseJSON('currentUser', null);
       let isSyncing = false;
       let syncDebounceTimer = null;
+      // Induláskori védelem: a felhő-letöltés lezárultáig nincs feltöltés és
+      // automatikus task-halasztás a még elavult helyi adaton.
+      let initialPullPending = false;
+      let pendingPushAfterSync = false;
 
       let dailyNotificationTimes = [];
 
@@ -1778,7 +1782,9 @@
           // Automatikus elhalasztás: a be nem fejezett, "auto defer" jelölésű
           // task-ok, amik korábbi napról maradtak, mostantól automatikusan mára
           // tolódnak — jelölve, hogy "áthozott" tétel.
-          const wasAnythingDeferred = runAutomaticTaskDeferral();
+          // Bejelentkezve + auto-sync esetén a halasztás a felhő-letöltés UTÁN fut.
+          const deferAfterInitialPull = !!(currentUser && autoSyncEnabled);
+          const wasAnythingDeferred = deferAfterInitialPull ? false : runAutomaticTaskDeferral();
 
           saveEvents(true);
 
@@ -1799,7 +1805,16 @@
 
           if (currentUser) {
               updateAccountUI();
-              if (autoSyncEnabled) await performSync('pull');
+              if (autoSyncEnabled) {
+                  initialPullPending = true;
+                  await performSync('pull');
+                  initialPullPending = false;
+                  if (runAutomaticTaskDeferral()) {
+                      saveEvents(true);
+                      updateCalendar();
+                      triggerAutoSync();
+                  }
+              }
           } 
           
           window.addEventListener('popstate', (event) => {
@@ -4079,7 +4094,7 @@
           if (syncPrefs.shifts) {
               backup.shifts = JSON.parse(localStorage.getItem("shifts") || "{}");
               const shiftsModStr = localStorage.getItem("shifts_last_modified");
-              backup.shifts_last_modified = parseInt(shiftsModStr || Date.now().toString(), 10);
+              backup.shifts_last_modified = parseInt(shiftsModStr || '0', 10);
           }
           if (syncPrefs.settings) backup.settings = { 
               theme: localStorage.getItem('theme'), 
@@ -4150,7 +4165,9 @@
       }
 
       async function performSync(direction) {
-          if (!currentUser || isSyncing) return;
+          if (!currentUser) return;
+          if (direction === 'push' && (isSyncing || initialPullPending)) { pendingPushAfterSync = true; return; }
+          if (isSyncing) return;
           isSyncing = true;
           updateSyncStatus('Syncing...');
           try {
@@ -4166,7 +4183,10 @@
                   else updateSyncStatus(`Sync error: Save failed`, true);
               }
           } catch (e) { updateSyncStatus('Sync Failed', true); }
-          finally { isSyncing = false; }
+          finally {
+              isSyncing = false;
+              if (pendingPushAfterSync && !initialPullPending) { pendingPushAfterSync = false; performSync('push'); }
+          }
       }
 
       function showPastEventsPopup() {
