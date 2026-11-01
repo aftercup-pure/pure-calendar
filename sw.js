@@ -59,6 +59,7 @@ function scheduleLocalNotifications(times) {
         self.registration.showNotification('Aftercup Brief', {
           body: 'Time to check your daily summary.',
           icon: '/icons/icon-192x192.png',
+          badge: '/icons/badge-72x72.png',
           tag: 'daily-summary'
         });
       }, delay);
